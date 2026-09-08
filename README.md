@@ -44,7 +44,7 @@ opencra report --last
 ### GitHub Action
 
 ```yaml
-- uses: CodeLancasterX/opencra@v1
+- uses: crwncode/opencra@v1
   with:
     fail-on: kev
 ```
