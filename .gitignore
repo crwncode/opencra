@@ -216,3 +216,34 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Environment variables & secrets (CRITICAL)
+.env
+.env.*
+!.env.example
+
+# IDEs & Editor settings
+.vscode/
+.idea/
+
+# Local OS metadata
+.DS_Store
+Thumbs.db
+
+# SQLite / Local Databases
+*.db
+*.sqlite3
+crashield.db
+
+# OpenCRA CLI output test files
+*.cyclonedx.json
+*.spdx.json
+cra-report.pdf
+*.pdf-fallback.txt
+
+# Node / frontend
+node_modules/
+apps/web/dist/
+
+# uv
+.python-version
