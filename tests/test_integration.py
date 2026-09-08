@@ -14,7 +14,7 @@ from pathlib import Path
 import httpx
 import pytest
 from opencra_cli import __version__
-from opencra_cli.app import app
+from opencra_cli.app import FailOnOpt, app
 from opencra_cli.db import Cache
 from opencra_cli.httputil import HTTP_TIMEOUT, USER_AGENT, client
 from opencra_cli.kev import (
@@ -26,6 +26,7 @@ from opencra_cli.kev import (
 )
 from opencra_cli.pdf import export_report, weasyprint_status
 from opencra_shared.models import SbomDocument, SbomMetadata, ScanResult
+from typer.main import get_command
 from typer.testing import CliRunner
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -184,12 +185,10 @@ def test_weasyprint_status_documents_fallback_without_natives() -> None:
 
 
 def test_scan_fail_on_defaults_to_kev() -> None:
-    runner = CliRunner()
-    result = runner.invoke(app, ["scan", "--help"])
-    assert result.exit_code == 0
-    help_text = result.stdout
-    assert "--fail-on" in help_text
-    assert "kev" in help_text
+    scan_cmd = get_command(app).commands["scan"]
+    fail_on = next(p for p in scan_cmd.params if "--fail-on" in p.opts)
+    default = fail_on.default() if callable(fail_on.default) else fail_on.default
+    assert default in {FailOnOpt.kev, FailOnOpt.kev.value, "kev"}
 
 
 def test_scan_sample_cdx_offline_without_syft(
