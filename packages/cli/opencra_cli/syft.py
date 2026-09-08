@@ -110,5 +110,23 @@ def scan_target(target: str, *, syft_bin: str | None = None) -> dict[str, Any]:
     return payload
 
 
+def load_cyclonedx_file(path: Path) -> dict[str, Any] | None:
+    """Return a CycloneDX object if path is an existing CDX JSON file."""
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    if str(payload.get("bomFormat") or "").lower() == "cyclonedx":
+        return payload
+    return None
+
+
 def scan_to_document(target: str, *, syft_bin: str | None = None):
+    payload = load_cyclonedx_file(Path(target).expanduser())
+    if payload is not None:
+        return parse_cyclonedx(payload)
     return parse_cyclonedx(scan_target(target, syft_bin=syft_bin))

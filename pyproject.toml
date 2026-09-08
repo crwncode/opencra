@@ -68,3 +68,6 @@ packages = ["opencra_shared", "opencra_cli", "opencra_api"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 pythonpath = ["packages/shared", "packages/cli", "apps/api"]
+markers = [
+  "network: live network tests (skipped unless OPENCRA_NETWORK_TESTS=1)",
+]
