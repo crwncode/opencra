@@ -13,8 +13,6 @@ from pathlib import Path
 
 import httpx
 import pytest
-from typer.testing import CliRunner
-
 from opencra_cli import __version__
 from opencra_cli.app import app
 from opencra_cli.db import Cache
@@ -28,6 +26,7 @@ from opencra_cli.kev import (
 )
 from opencra_cli.pdf import export_report, weasyprint_status
 from opencra_shared.models import SbomDocument, SbomMetadata, ScanResult
+from typer.testing import CliRunner
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_CDX = REPO_ROOT / "examples" / "sample.cdx.json"
