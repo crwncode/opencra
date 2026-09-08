@@ -1,0 +1,59 @@
+name: OpenCRA
+description: Scan a repository with Syft, match OSV + CISA KEV, and fail CI on actively exploited candidates.
+author: CodeLancaster
+branding:
+  icon: shield
+  color: red
+inputs:
+  target:
+    description: Syft scan target
+    required: false
+    default: "."
+  fail-on:
+    description: none | kev | critical | high
+    required: false
+    default: kev
+  format:
+    description: table | json | cyclonedx | spdx
+    required: false
+    default: table
+  export-pdf:
+    description: Path for a community PDF (or HTML fallback)
+    required: false
+    default: ""
+  offline:
+    description: Use cached KEV/OSV only
+    required: false
+    default: "false"
+  syft-version:
+    description: Syft version to install when missing
+    required: false
+    default: "v1.18.1"
+runs:
+  using: composite
+  steps:
+    - name: Install Syft
+      shell: bash
+      run: |
+        if ! command -v syft >/dev/null 2>&1; then
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
+            | sh -s -- -b "${RUNNER_TEMP}/bin" "${{ inputs.syft-version }}"
+          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
+        fi
+    - name: Install OpenCRA
+      shell: bash
+      run: pipx install "${{ github.action_path }}/../cli" || pip install "${{ github.action_path }}/../shared" "${{ github.action_path }}/../cli"
+    - name: Scan
+      shell: bash
+      run: |
+        EXTRA=()
+        if [ -n "${{ inputs.export-pdf }}" ]; then
+          EXTRA+=(--export-pdf "${{ inputs.export-pdf }}")
+        fi
+        if [ "${{ inputs.offline }}" = "true" ]; then
+          EXTRA+=(--offline)
+        fi
+        opencra scan "${{ inputs.target }}" \
+          --format "${{ inputs.format }}" \
+          --fail-on "${{ inputs.fail-on }}" \
+          "${EXTRA[@]}"

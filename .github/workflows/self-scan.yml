@@ -1,0 +1,19 @@
+name: Self-scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  opencra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install Syft
+        run: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+      - name: Install OpenCRA
+        run: uv sync --all-packages
+      - name: Scan this repository
+        run: uv run opencra scan . --fail-on none --format table
