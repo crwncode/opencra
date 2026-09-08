@@ -5,7 +5,7 @@ opencra scan [TARGET]
   --format {table,json,cyclonedx,spdx}
   --output PATH
   --export-pdf PATH
-  --fail-on {none,kev,critical,high}
+  --fail-on {none,kev,critical,high}   (default: kev)
   --offline
   --enrich {none,nvd}
   --sync-cloud
@@ -16,6 +16,8 @@ opencra doctor
 opencra kev refresh
 opencra report --last --export-pdf PATH
 ```
+
+`TARGET` may be a Syft scan target (directory, image, …) or an existing CycloneDX JSON file. Files with `"bomFormat": "CycloneDX"` are parsed directly and do not require Syft.
 
 ## Exit codes
 

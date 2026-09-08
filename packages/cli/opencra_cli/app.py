@@ -108,13 +108,17 @@ def _run_scan(
 
 @app.command()
 def scan(
-    target: str = typer.Argument(".", help="Path, image, or Syft target to scan."),
+    target: str = typer.Argument(
+        ".", help="Path, image, Syft target, or CycloneDX JSON file."
+    ),
     format: FormatOpt = typer.Option(FormatOpt.table, "--format", help="Output format."),
     output: Path | None = typer.Option(None, "--output", help="Write formatted output to PATH."),
     export_pdf: Path | None = typer.Option(
         None, "--export-pdf", help="Write a community PDF (falls back to HTML/Markdown)."
     ),
-    fail_on: FailOnOpt = typer.Option(FailOnOpt.none, "--fail-on"),
+    fail_on: FailOnOpt = typer.Option(
+        FailOnOpt.kev, "--fail-on", help="Exit 1 when threshold is met. Default: kev."
+    ),
     offline: bool = typer.Option(False, "--offline", help="Use SQLite caches only. No network."),
     enrich: EnrichOpt = typer.Option(EnrichOpt.none, "--enrich"),
     sync_cloud: bool = typer.Option(False, "--sync-cloud", help="POST results to CRA-Shield."),
@@ -122,7 +126,7 @@ def scan(
     quiet: bool = typer.Option(False, "--quiet"),
     verbose: bool = typer.Option(False, "--verbose"),
 ) -> None:
-    """Generate an SBOM with Syft and match components against OSV + CISA KEV."""
+    """Generate or ingest an SBOM and match components against OSV + CISA KEV."""
     _configure_logging(verbose, quiet)
     try:
         with Cache() as cache:
