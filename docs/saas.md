@@ -1,6 +1,6 @@
-# CRA-Shield control plane
+# Optional local control plane
 
-Hosted companion to the OpenCRA CLI. Local scans stay free. Cloud clocks, audit PDFs, OpenVEX, and SRP packets are paid.
+In-repo FastAPI + web apps for local clocks, audit PDFs, OpenVEX, and SRP packets. Not a hosted product and not required for CLI scans.
 
 ## Run locally
 
@@ -13,6 +13,8 @@ cd apps/web && npm install && npm run dev
 Dev auth headers: `X-Dev-User-Id` and `X-Dev-Org-Id`. Production uses Supabase JWT (`Authorization: Bearer`) or a hashed CLI API key.
 
 Apply [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql) to a Supabase project and set `DATABASE_URL` / `SUPABASE_JWT_SECRET`.
+
+CLI `--sync-cloud` POSTs to `$OPENCRA_API_URL/v1/ingest` only when you set both `OPENCRA_API_URL` and `OPENCRA_API_KEY`. There is no default commercial host.
 
 ## Endpoints
 

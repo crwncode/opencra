@@ -166,7 +166,11 @@ def scan(
     ),
     offline: bool = typer.Option(False, "--offline", help="Use SQLite caches only. No network."),
     enrich: EnrichOpt = typer.Option(EnrichOpt.none, "--enrich"),
-    sync_cloud: bool = typer.Option(False, "--sync-cloud", help="POST results to CRA-Shield."),
+    sync_cloud: bool = typer.Option(
+        False,
+        "--sync-cloud",
+        help="POST results to OPENCRA_API_URL when OPENCRA_API_KEY is also set.",
+    ),
     syft_bin: str | None = typer.Option(None, "--syft-bin", help="Path to the Syft binary."),
     quiet: bool = typer.Option(False, "--quiet"),
     verbose: bool = typer.Option(False, "--verbose"),

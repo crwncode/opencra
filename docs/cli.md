@@ -40,11 +40,11 @@ State directory `~/.opencra` (override with `OPENCRA_HOME`). SQLite cache at `~/
 
 ## Cloud sync
 
-After a scan, unless `--quiet`, the CLI prints a one-line completion summary. Table format writes it to stdout; `json` / `cyclonedx` / `spdx` write it to stderr so payloads stay parseable. The CRA-Shield `--sync-cloud` hint is omitted when the scan was already synced.
+After a scan, unless `--quiet`, the CLI prints a one-line completion summary. Table format writes it to stdout; `json` / `cyclonedx` / `spdx` write it to stderr so payloads stay parseable.
 
-`--sync-cloud` POSTs the normalized scan JSON to `OPENCRA_API_URL` (default `https://api.cra-shield.com/v1/ingest`) with `OPENCRA_API_KEY`. A host-only value such as `http://127.0.0.1:8000` still receives `/v1/ingest` appended. Without a key, the CLI prints a signup URL and leaves the local scan intact.
+`--sync-cloud` POSTs the normalized scan JSON to `OPENCRA_API_URL` with `OPENCRA_API_KEY`. There is **no default commercial URL**. Both variables are required; otherwise the CLI reports that sync was skipped and leaves the local scan intact. A host-only value such as `http://127.0.0.1:8000` still receives `/v1/ingest` appended.
 
-The public CLI does not depend on the CRA-Shield codebase. The private `opencra-cloud` repo consumes [`packages/shared`](../packages/shared) as:
+The public CLI does not depend on a hosted control plane. Downstream consumers can take [`packages/shared`](../packages/shared) as:
 
 ```toml
 opencra-shared = { git = "https://github.com/crwncode/opencra.git", subdirectory = "packages/shared" }

@@ -32,7 +32,7 @@ inputs:
     required: false
     default: "false"
   sync-cloud:
-    description: POST results to CRA-Shield (requires OPENCRA_API_KEY)
+    description: POST results to OPENCRA_API_URL when OPENCRA_API_KEY is set
     required: false
     default: "false"
   syft-version:

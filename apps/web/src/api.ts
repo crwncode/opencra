@@ -1,9 +1,9 @@
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 export function headers(): HeadersInit {
-  const token = localStorage.getItem("crashield_token");
-  const devUser = localStorage.getItem("crashield_dev_user") || "user-1";
-  const devOrg = localStorage.getItem("crashield_dev_org") || "org-1";
+  const token = localStorage.getItem("opencra_token");
+  const devUser = localStorage.getItem("opencra_dev_user") || "user-1";
+  const devOrg = localStorage.getItem("opencra_dev_org") || "org-1";
   const h: Record<string, string> = { "Content-Type": "application/json" };
   if (token) h.Authorization = `Bearer ${token}`;
   else {

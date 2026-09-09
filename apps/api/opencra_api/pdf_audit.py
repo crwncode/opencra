@@ -15,7 +15,7 @@ body{font-family:Georgia,serif;margin:36px;color:#111}
 h1{font-size:22px} table{border-collapse:collapse;width:100%;font-size:12px}
 td,th{border:1px solid #ccc;padding:6px} .note{background:#fff6e5;padding:10px}
 </style></head><body>
-<h1>CRA-Shield audit report</h1>
+<h1>OpenCRA audit report</h1>
 <p class="note">This report is evidence for a compliance officer. It does not certify
 CE marking or file with ENISA. Clocks start only from human awareness_at.</p>
 <p>Organization: {{ org.name }} ({{ org.main_establishment_ms }})<br/>

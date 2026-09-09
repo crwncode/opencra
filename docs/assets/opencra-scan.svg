@@ -42,11 +42,6 @@
     <tspan class="green">[+]</tspan>
     <tspan class="white"> Scan complete: 1 critical vulnerability found.</tspan>
   </text>
-  <text class="term line" style="animation-delay:2.0s" x="20" y="296">
-    <tspan class="cyan">[i]</tspan>
-    <tspan class="white"> Need automated 24h/72h ENISA/CSIRT audit reporting?</tspan>
-  </text>
-  <text class="term line white" style="animation-delay:2.15s" x="20" y="316">    Run with --sync-cloud or visit https://cra-shield.com</text>
 
-  <text class="term line prompt" style="animation-delay:2.5s" x="20" y="356">$</text>
+  <text class="term line prompt" style="animation-delay:2.1s" x="20" y="320">$</text>
 </svg>

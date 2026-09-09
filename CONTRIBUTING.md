@@ -23,6 +23,6 @@ uv run mypy packages/shared/opencra_shared packages/cli/opencra_cli
 - Syft is invoked with an argument array. Do not use `shell=True`.
 - Validate PURLs with `packageurl-python` before OSV batch queries.
 
-Discuss ideas in GitHub Discussions. OpenCRA is Apache 2.0. The CRA-Shield control plane lives in the private `opencra-cloud` repo.
+Discuss ideas in GitHub Discussions. OpenCRA is Apache 2.0.
 
 Launch copy (Show HN, Reddit, Marketplace checklist) lives in [docs/launch.md](docs/launch.md).

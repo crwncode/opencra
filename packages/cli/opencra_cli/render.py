@@ -15,8 +15,6 @@ DISCLAIMER = (
     "Article 14 clocks start only after a human assessment."
 )
 
-CRA_SHIELD_URL = "https://cra-shield.com"
-
 
 def print_completion_banner(
     result: ScanResult,
@@ -24,7 +22,8 @@ def print_completion_banner(
     *,
     synced: bool = False,
 ) -> None:
-    """Non-intrusive post-scan hint. Never mixed into JSON/CycloneDX/SPDX payloads."""
+    """One-line scan summary. Never mixed into JSON/CycloneDX/SPDX payloads."""
+    _ = synced  # callers still pass this; no hosted upsell follows the summary
     critical = sum(1 for m in result.matches if (m.severity or "").upper() == "CRITICAL")
     kev_count = len(result.kev_hits)
     if kev_count:
@@ -37,14 +36,6 @@ def print_completion_banner(
             f"[bold green][+][/bold green] Scan complete: {critical} critical "
             "vulnerabilities found."
         )
-    if synced:
-        return
-    console.print(
-        "[cyan][i][/cyan] Need automated 24h/72h CRA clocks and SRP-ready evidence packs?"
-    )
-    console.print(
-        f"    Run with [bold]--sync-cloud[/bold] or visit {CRA_SHIELD_URL}"
-    )
 
 
 def result_to_json(result: ScanResult) -> dict:
@@ -114,5 +105,5 @@ def print_table(result: ScanResult, console: Console) -> None:
     if kev_count:
         console.print(
             "[bold]KEV hits are CRA candidates.[/bold] "
-            "Acknowledge awareness in CRA-Shield to start the 24-hour clock."
+            "Acknowledge awareness after a human assessment to start the 24-hour clock."
         )

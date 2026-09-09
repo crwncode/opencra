@@ -281,8 +281,10 @@ def test_scan_table_prints_completion_banner(
     result = runner.invoke(app, ["scan", str(SAMPLE_CDX), "--offline"])
     assert result.exit_code == 0, result.stdout + result.stderr
     assert "Scan complete: 0 critical vulnerabilities found." in result.stdout
-    assert "--sync-cloud" in result.stdout
-    assert "https://cra-shield.com" in result.stdout
+    assert "--sync-cloud" not in result.stdout
+    assert "cra-shield.com" not in result.stdout
+    assert "crashield.dev" not in result.stdout
+    assert "CRA-Shield" not in result.stdout
 
 
 def test_scan_json_stdout_stays_parseable(
@@ -299,8 +301,9 @@ def test_scan_json_stdout_stays_parseable(
     payload = json.loads(result.stdout)
     assert payload["sbom"]["metadata"]["name"] == "acme-app"
     assert "cra-shield.com" not in result.stdout
-    assert "--sync-cloud" in result.stderr
-    assert "https://cra-shield.com" in result.stderr
+    assert "cra-shield.com" not in result.stderr
+    assert "--sync-cloud" not in result.stderr
+    assert "CRA-Shield" not in result.stderr
 
 
 def test_scan_sample_kev_offline_fails_on_kev(

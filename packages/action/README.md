@@ -20,7 +20,7 @@ That fails the job on a CISA KEV hit (an actively exploited CVE). Equivalent to 
 | `format` | `table` | `table` \| `json` \| `cyclonedx` \| `spdx` |
 | `export-pdf` | | Community PDF path (HTML fallback if Cairo/Pango are missing) |
 | `offline` | `false` | Cached KEV/OSV only |
-| `sync-cloud` | `false` | POST to CRA-Shield (`OPENCRA_API_KEY`) |
+| `sync-cloud` | `false` | POST to `OPENCRA_API_URL` when `OPENCRA_API_KEY` is set |
 | `syft-version` | `v1.18.1` | Syft release to install when missing |
 
 The composite action installs Python 3.12 and Syft if needed, then runs `opencra scan`. A Docker image in this folder installs Cairo and Pango so `--export-pdf` works headless.

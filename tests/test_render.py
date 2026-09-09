@@ -22,12 +22,14 @@ def _text(result: ScanResult, *, synced: bool = False) -> str:
     return buf.getvalue()
 
 
-def test_banner_zero_critical_mentions_sync_cloud() -> None:
+def test_banner_zero_critical_has_no_upsell() -> None:
     text = _text(_result())
     assert "Scan complete: 0 critical vulnerabilities found." in text
-    assert "--sync-cloud" in text
-    assert "https://cra-shield.com" in text
-    assert "24h/72h" in text
+    assert "--sync-cloud" not in text
+    assert "cra-shield.com" not in text
+    assert "crashield.dev" not in text
+    assert "CRA-Shield" not in text
+    assert "24h/72h" not in text
 
 
 def test_banner_kev_hit_leads_with_kev_count() -> None:
@@ -44,10 +46,11 @@ def test_banner_kev_hit_leads_with_kev_count() -> None:
         )
     )
     assert "1 CISA KEV candidate found." in text
-    assert "--sync-cloud" in text
+    assert "--sync-cloud" not in text
+    assert "cra-shield.com" not in text
 
 
-def test_banner_skips_upsell_after_sync() -> None:
+def test_banner_has_no_hosted_promo_after_sync() -> None:
     text = _text(_result(), synced=True)
     assert "Scan complete: 0 critical vulnerabilities found." in text
     assert "--sync-cloud" not in text
