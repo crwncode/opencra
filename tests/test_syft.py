@@ -390,7 +390,7 @@ def test_scan_dir_announces_bootstrap(tmp_path: Path, monkeypatch: pytest.Monkey
 
     result = CliRunner().invoke(app, ["scan", str(proj), "--fail-on", "none"])
     assert result.exit_code == 0, result.stdout + result.stderr
-    combined = result.stdout + result.stderr
+    combined = " ".join((result.stdout + result.stderr).split())
     assert "Syft is required" in combined
     assert "Downloading the official Anchore release" in combined
     assert str(managed_syft_path().parent) in combined
@@ -437,9 +437,10 @@ def test_doctor_install_syft_uses_mocked_download(
     _mock_syft_download(monkeypatch, archive=_make_syft_archive(FAKE_SYFT_SCRIPT.encode()))
     result = CliRunner().invoke(app, ["doctor", "--install-syft"])
     assert result.exit_code == 0, result.stdout + result.stderr
-    assert "Syft install: ok" in result.stdout or "Syft install:" in result.stdout
+    combined = " ".join((result.stdout + result.stderr).split())
+    assert "Syft install: ok" in combined or "Syft install:" in combined
     assert managed_syft_path().is_file()
-    assert "Downloading the official Anchore release" in (result.stdout + result.stderr)
+    assert "Downloading the official Anchore release" in combined
 
 
 def test_download_timeout_is_sixty_seconds() -> None:
