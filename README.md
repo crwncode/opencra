@@ -26,8 +26,9 @@ brew install syft          # macOS
 # Linux: https://github.com/anchore/syft#installation
 
 pipx install opencra
-# or
+# or run without installing:
 uvx opencra doctor
+uvx opencra scan .
 ```
 
 ## Quickstart
@@ -39,6 +40,8 @@ opencra scan . --fail-on kev
 opencra scan . --format cyclonedx --output sbom.cdx.json
 opencra scan . --export-pdf cra-report.pdf
 opencra report --last
+# Demo a KEV candidate (exit 1). Not legal awareness; do not auto-file.
+opencra scan examples/sample-kev.cdx.json --fail-on kev
 ```
 
 ### GitHub Action

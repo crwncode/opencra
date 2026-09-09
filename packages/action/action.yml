@@ -42,7 +42,7 @@ runs:
         fi
     - name: Install OpenCRA
       shell: bash
-      run: pipx install "${{ github.action_path }}/../cli" || pip install "${{ github.action_path }}/../shared" "${{ github.action_path }}/../cli"
+      run: pip install "${{ github.action_path }}/../shared" "${{ github.action_path }}/../cli"
     - name: Scan
       shell: bash
       run: |

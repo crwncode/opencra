@@ -1,0 +1,28 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-09T06:00:00Z",
+    "component": {
+      "type": "application",
+      "name": "acme-legacy",
+      "version": "0.9.0"
+    },
+    "tools": {
+      "components": [
+        { "name": "opencra", "version": "0.1.0" }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "log4j-core",
+      "version": "2.14.1",
+      "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+      "licenses": [{ "license": { "id": "Apache-2.0" } }]
+    }
+  ]
+}

@@ -202,7 +202,11 @@ def doctor(
 
     console.print(f"OSV: {'reachable' if osv_ping() else 'unreachable (offline scans still work)'}")
     pdf_ok, pdf_reason = weasyprint_status()
-    console.print(f"PDF engine: {'ok' if pdf_ok else 'fallback'} — {pdf_reason}")
+    # markup=False: Rich treats [pdf] in opencra-cli[pdf] as a style tag.
+    console.print(
+        f"PDF engine: {'ok' if pdf_ok else 'fallback'} — {pdf_reason}",
+        markup=False,
+    )
     console.print(
         "[dim]A KEV match is a CRA candidate. Clocks start only after human awareness.[/dim]"
     )

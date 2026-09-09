@@ -31,6 +31,8 @@ from typer.testing import CliRunner
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_CDX = REPO_ROOT / "examples" / "sample.cdx.json"
+SAMPLE_KEV_CDX = REPO_ROOT / "examples" / "sample-kev.cdx.json"
+LOG4J_PURL = "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1"
 
 MINIMAL_KEV = {
     "vulnerabilities": [
@@ -182,6 +184,35 @@ def test_weasyprint_status_documents_fallback_without_natives() -> None:
         return
     lowered = reason.lower()
     assert "weasyprint" in lowered or "cairo" in lowered or "pango" in lowered
+    if "not installed" in lowered:
+        assert "opencra-cli[pdf]" in reason
+
+
+def test_pdf_writes_native_when_weasyprint_available(tmp_path: Path) -> None:
+    ok, reason = weasyprint_status()
+    if not ok:
+        pytest.skip(reason)
+    result = ScanResult(
+        target=str(SAMPLE_CDX),
+        scanned_at=datetime.now(timezone.utc),
+        sbom=SbomDocument(metadata=SbomMetadata(name="acme-app")),
+        matches=[],
+    )
+    dest = tmp_path / "cra-report.pdf"
+    written = export_report(result, dest)
+    assert written == dest
+    assert written.read_bytes()[:4] == b"%PDF"
+
+
+def test_doctor_pdf_extra_hint_survives_rich_markup(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "opencra_cli.app.weasyprint_status",
+        lambda: (False, "weasyprint is not installed (pip install 'opencra-cli[pdf]')"),
+    )
+    runner = CliRunner()
+    result = runner.invoke(app, ["doctor"])
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert "opencra-cli[pdf]" in result.stdout
 
 
 def test_scan_fail_on_defaults_to_kev() -> None:
@@ -229,6 +260,48 @@ def test_scan_sample_cdx_offline_without_syft(
     assert "requests" in names
     # Offline + empty OSV cache => no matches; default --fail-on kev still exits 0.
     assert payload["matches"] == []
+
+
+def test_scan_sample_kev_offline_fails_on_kev(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cache_path = tmp_path / "cache.db"
+    monkeypatch.setenv("OPENCRA_CACHE", str(cache_path))
+
+    def boom(**kwargs: object) -> httpx.Client:
+        raise AssertionError("--offline must not hit the network")
+
+    monkeypatch.setattr("opencra_cli.kev.client", boom)
+    monkeypatch.setattr("opencra_cli.osv.client", boom)
+
+    with Cache(cache_path) as cache:
+        cache.save_kev_catalog(MINIMAL_KEV)
+        cache.save_osv(
+            LOG4J_PURL,
+            [
+                {
+                    "id": "GHSA-jfh8-c2jp-5v3q",
+                    "aliases": ["CVE-2021-44228"],
+                    "summary": "Log4Shell",
+                    "database_specific": {"severity": "CRITICAL"},
+                }
+            ],
+        )
+
+    runner = CliRunner()
+    result = runner.invoke(app, ["scan", str(SAMPLE_KEV_CDX), "--offline"])
+    assert result.exit_code == 1, result.stdout + result.stderr
+    combined = result.stdout + result.stderr
+    assert "CVE-2021-44228" in combined
+    assert "KEV" in combined
+    assert "candidate" in combined.lower()
+    assert "scan failed --fail-on kev" in combined.lower()
+    assert "enisa" not in combined.lower()
+
+    none = runner.invoke(
+        app, ["scan", str(SAMPLE_KEV_CDX), "--offline", "--fail-on", "none", "--quiet"]
+    )
+    assert none.exit_code == 0, none.stdout + none.stderr
 
 
 def test_scan_offline_without_kev_cache_exits_2(
