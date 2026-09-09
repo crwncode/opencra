@@ -1,7 +1,7 @@
 # OpenCRA GitHub Action
 
 ```yaml
-- uses: CodeLancasterX/opencra@v1
+- uses: crwncode/opencra@v1
   with:
     target: .
     fail-on: kev
