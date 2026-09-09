@@ -1,6 +1,6 @@
 [project]
 name = "opencra"
-version = "0.1.0"
+version = "0.1.4"
 description = "CRA Article 14 reporting readiness for your SBOM — know which vulnerabilities start a 24-hour clock."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -14,7 +14,7 @@ classifiers = [
   "Topic :: Security",
 ]
 dependencies = [
-  "opencra-cli",
+  "opencra-cli>=0.1.4",
 ]
 
 [project.urls]
