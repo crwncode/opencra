@@ -20,6 +20,17 @@ from typing import Any, Literal
 
 import httpx
 from opencra_shared.sbom import parse_cyclonedx
+from rich.console import Console
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    ProgressColumn,
+    SpinnerColumn,
+    TextColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
+)
 
 from opencra_cli.httputil import DOWNLOAD_TIMEOUT, client
 from opencra_cli.paths import opencra_home
@@ -27,6 +38,7 @@ from opencra_cli.paths import opencra_home
 logger = logging.getLogger("opencra.syft")
 
 MIN_SYFT_VERSION = (1, 0, 0)
+DOWNLOAD_CHUNK_SIZE = 64 * 1024
 SYFT_RELEASES_LATEST = "https://api.github.com/repos/anchore/syft/releases/latest"
 SYFT_GITHUB_DOWNLOAD = "https://github.com/anchore/syft/releases/download"
 InstallHook = Callable[[Path], None]
@@ -177,7 +189,71 @@ def _asset_url(release: dict[str, Any], filename: str) -> str | None:
     return None
 
 
-def install_managed_syft(*, force: bool = False) -> str:
+def response_total_bytes(response: httpx.Response) -> int | None:
+    """Return Content-Length when present and valid; otherwise ``None`` (spinner)."""
+    raw = response.headers.get("content-length")
+    if raw is None or str(raw).strip() == "":
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
+
+
+def _progress_columns(*, determinate: bool) -> tuple[ProgressColumn, ...]:
+    description = TextColumn("[progress.description]{task.description}")
+    if determinate:
+        return (
+            description,
+            BarColumn(),
+            DownloadColumn(),
+            TransferSpeedColumn(),
+            TimeRemainingColumn(),
+        )
+    return (
+        SpinnerColumn(),
+        description,
+        DownloadColumn(),
+        TransferSpeedColumn(),
+    )
+
+
+def download_url_bytes(
+    http: httpx.Client,
+    url: str,
+    *,
+    description: str = "Downloading Syft",
+    show_progress: bool = True,
+    console: Console | None = None,
+    chunk_size: int = DOWNLOAD_CHUNK_SIZE,
+) -> bytes:
+    """Stream ``url`` to bytes. Rich bar when Content-Length is known, else spinner.
+
+    Always uses ``http.stream`` (never ``shell=True``). Caller supplies the shared
+    httpx client so User-Agent and timeouts stay intact.
+    """
+    with http.stream("GET", url) as response:
+        response.raise_for_status()
+        total = response_total_bytes(response)
+        collected = bytearray()
+        iterator = response.iter_bytes(chunk_size=chunk_size)
+        if not show_progress:
+            for chunk in iterator:
+                collected.extend(chunk)
+            return bytes(collected)
+
+        columns = _progress_columns(determinate=total is not None)
+        progress_console = console or Console(stderr=True)
+        with Progress(*columns, console=progress_console, transient=True) as progress:
+            task_id = progress.add_task(description, total=total)
+            for chunk in iterator:
+                collected.extend(chunk)
+                progress.update(task_id, advance=len(chunk))
+        return bytes(collected)
+
+
+def install_managed_syft(*, force: bool = False, show_progress: bool = True) -> str:
     """Download the official Anchore Syft release into ``~/.opencra/bin``.
 
     Uses HTTPS + User-Agent ``opencra/<ver>``. The GitHub release JSON call uses
@@ -208,9 +284,12 @@ def install_managed_syft(*, force: bool = False) -> str:
                 raise SyftError(f"Syft checksums.txt has no entry for {archive_name}.")
 
         with client(timeout=DOWNLOAD_TIMEOUT) as http:
-            archive_resp = http.get(archive_url)
-            archive_resp.raise_for_status()
-            archive = archive_resp.content
+            archive = download_url_bytes(
+                http,
+                archive_url,
+                description=f"Downloading {archive_name}",
+                show_progress=show_progress,
+            )
     except httpx.HTTPError as exc:
         raise SyftError(f"Failed to download official Syft release: {exc}\n{INSTALL_HINT}") from exc
 
@@ -263,6 +342,8 @@ def ensure_syft(
     offline: bool = False,
     auto_install: bool = True,
     on_install: InstallHook | None = None,
+    on_installed: InstallHook | None = None,
+    show_progress: bool = True,
 ) -> str:
     """Resolve Syft, optionally downloading the official release when missing.
 
@@ -279,7 +360,10 @@ def ensure_syft(
     dest_dir = managed_syft_path().parent
     if on_install is not None:
         on_install(dest_dir)
-    return install_managed_syft()
+    path = install_managed_syft(show_progress=show_progress)
+    if on_installed is not None:
+        on_installed(Path(path))
+    return path
 
 
 def _parse_version_token(text: str) -> tuple[int, int, int] | None:
@@ -355,12 +439,16 @@ def scan_target(
     offline: bool = False,
     auto_install: bool = True,
     on_install: InstallHook | None = None,
+    on_installed: InstallHook | None = None,
+    show_progress: bool = True,
 ) -> dict[str, Any]:
     binary = ensure_syft(
         syft_bin,
         offline=offline,
         auto_install=auto_install,
         on_install=on_install,
+        on_installed=on_installed,
+        show_progress=show_progress,
     )
     cmd = [binary, "scan", target, "-o", "cyclonedx-json"]
     logger.debug("Running %s", cmd)
@@ -411,6 +499,8 @@ def scan_to_document(
     offline: bool = False,
     auto_install: bool = True,
     on_install: InstallHook | None = None,
+    on_installed: InstallHook | None = None,
+    show_progress: bool = True,
 ):
     payload = load_cyclonedx_file(Path(target).expanduser())
     if payload is not None:
@@ -422,5 +512,7 @@ def scan_to_document(
             offline=offline,
             auto_install=auto_install,
             on_install=on_install,
+            on_installed=on_installed,
+            show_progress=show_progress,
         )
     )
