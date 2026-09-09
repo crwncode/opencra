@@ -280,7 +280,7 @@ def cyclonedx_to_spdx(document: SbomDocument) -> dict[str, Any]:
         "documentNamespace": document.serial_number,
         "creationInfo": {
             "created": created,
-            "creators": ["Tool: opencra-0.1.4"],
+            "creators": ["Tool: opencra-0.1.5"],
         },
         "packages": packages,
     }
