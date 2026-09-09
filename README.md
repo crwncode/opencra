@@ -154,4 +154,4 @@ The CLI, Action, Syft wrapper, OSV + KEV matching, and local reports are Apache 
 
 ## License
 
-Apache License 2.0. Copyright 2026 CodeLancaster.
+Apache License 2.0. Copyright 2026 crwncode.
