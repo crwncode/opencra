@@ -15,10 +15,22 @@ jobs:
       - uses: astral-sh/setup-uv@v4
       - name: Build
         run: |
-          uv build --package opencra-shared
-          uv build --package opencra-cli
-          uv build
-      - name: Publish
+          uv build --package opencra-cli --out-dir dist/opencra-cli --no-create-gitignore
+          uv build --package opencra-shared --out-dir dist/opencra-shared --no-create-gitignore
+          uv build --out-dir dist/opencra --no-create-gitignore
+      # Separate Trusted Publisher exchanges: one OIDC upload cannot create
+      # a second project after authenticating as an existing one (opencra).
+      - name: Publish opencra-cli
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: dist/
+          packages-dir: dist/opencra-cli
+      - name: Publish opencra-shared
+        continue-on-error: true
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/opencra-shared
+      - name: Publish opencra
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/opencra
+          skip-existing: true
