@@ -260,6 +260,43 @@ def test_scan_sample_cdx_offline_without_syft(
     assert "requests" in names
     # Offline + empty OSV cache => no matches; default --fail-on kev still exits 0.
     assert payload["matches"] == []
+    combined = result.stdout + result.stderr
+    assert "cra-shield.com" not in combined
+    assert "--sync-cloud" not in combined
+
+
+def test_scan_table_prints_completion_banner(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cache_path = tmp_path / "cache.db"
+    monkeypatch.setenv("OPENCRA_CACHE", str(cache_path))
+    with Cache(cache_path) as cache:
+        cache.save_kev_catalog(MINIMAL_KEV)
+
+    runner = CliRunner()
+    result = runner.invoke(app, ["scan", str(SAMPLE_CDX), "--offline"])
+    assert result.exit_code == 0, result.stdout + result.stderr
+    assert "Scan complete: 0 critical vulnerabilities found." in result.stdout
+    assert "--sync-cloud" in result.stdout
+    assert "https://cra-shield.com" in result.stdout
+
+
+def test_scan_json_stdout_stays_parseable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cache_path = tmp_path / "cache.db"
+    monkeypatch.setenv("OPENCRA_CACHE", str(cache_path))
+    with Cache(cache_path) as cache:
+        cache.save_kev_catalog(MINIMAL_KEV)
+
+    runner = CliRunner()
+    result = runner.invoke(app, ["scan", str(SAMPLE_CDX), "--offline", "--format", "json"])
+    assert result.exit_code == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["sbom"]["metadata"]["name"] == "acme-app"
+    assert "cra-shield.com" not in result.stdout
+    assert "--sync-cloud" in result.stderr
+    assert "https://cra-shield.com" in result.stderr
 
 
 def test_scan_sample_kev_offline_fails_on_kev(

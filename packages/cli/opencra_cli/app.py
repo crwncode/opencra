@@ -19,7 +19,13 @@ from opencra_cli.nvd import cvss_from_nvd, enrich_cve
 from opencra_cli.osv import ping as osv_ping
 from opencra_cli.osv import query_batch
 from opencra_cli.pdf import PDF_HINT, export_report, weasyprint_status
-from opencra_cli.render import format_payload, print_table, result_to_json, write_output
+from opencra_cli.render import (
+    format_payload,
+    print_completion_banner,
+    print_table,
+    result_to_json,
+    write_output,
+)
 from opencra_cli.syft import SyftError, resolve_syft, scan_to_document, syft_version, version_ok
 from opencra_cli.sync import ingest
 
@@ -153,7 +159,11 @@ def scan(
             if not quiet:
                 console.print(f"Wrote {fmt.value} to {output}")
         else:
-            console.print(payload)
+            # Raw write so JSON/CycloneDX/SPDX stay parseable (Rich wraps long lines).
+            console.file.write(payload)
+            if not payload.endswith("\n"):
+                console.file.write("\n")
+            console.file.flush()
     elif output:
         write_output(result, OutputFormat.JSON, output)
 
@@ -171,6 +181,10 @@ def scan(
         response = ingest(result)
         if not quiet:
             console.print(response.get("message") or response)
+
+    if not quiet:
+        banner_console = console if fmt is OutputFormat.TABLE else err_console
+        print_completion_banner(result, banner_console, synced=sync_cloud)
 
     threshold = FailOn(fail_on.value)
     if result.fails(threshold):

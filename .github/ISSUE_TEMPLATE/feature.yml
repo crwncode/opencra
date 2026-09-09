@@ -1,0 +1,17 @@
+name: Feature request
+description: An idea for the open-source CLI or GitHub Action.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can you not do today in CI or locally?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+    validations:
+      required: true

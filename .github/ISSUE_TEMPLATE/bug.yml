@@ -1,0 +1,34 @@
+name: Bug report
+description: Something in the CLI or GitHub Action did not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: A KEV match is a candidate, not legal awareness. Use this form for tool bugs only.
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: Exact argv, or the Action YAML.
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OpenCRA version
+      placeholder: "opencra doctor output, or Action tag (v1)"
+    validations:
+      required: true

@@ -19,8 +19,6 @@ opencra report --last --export-pdf PATH
 
 `TARGET` may be a Syft scan target (directory, image, …) or an existing CycloneDX JSON file. Files with `"bomFormat": "CycloneDX"` are parsed directly and do not require Syft.
 
-`examples/sample.cdx.json` is a clean-ish SBOM (`requests`). `examples/sample-kev.cdx.json` is Log4j 2.14.1 so `--fail-on kev` exits 1. A KEV hit is a **candidate**, never awareness.
-
 ## Exit codes
 
 | Code | Meaning |
@@ -35,8 +33,16 @@ SQLite at `~/.opencra/cache.db` (override with `OPENCRA_CACHE`) using WAL mode. 
 
 ## PDF
 
-`--export-pdf` uses WeasyPrint when the `opencra-cli[pdf]` extra and Cairo/Pango are installed (`pip install 'opencra-cli[pdf]'`). Otherwise OpenCRA writes HTML and Markdown and explains how to install native libraries. The GitHub Action Docker image in `packages/action/` includes those libraries; the composite Action falls back to HTML.
+`--export-pdf` uses WeasyPrint when Cairo and Pango are installed. Otherwise OpenCRA writes HTML and Markdown and explains how to install native libraries. The GitHub Action image includes those libraries.
 
 ## Cloud sync
 
-`--sync-cloud` POSTs the scan to `OPENCRA_API_URL` (default `https://api.crashield.dev`) with `OPENCRA_API_KEY`. Without a key, the CLI prints a signup URL and leaves the local scan intact.
+After a scan, unless `--quiet`, the CLI prints a one-line completion summary. Table format writes it to stdout; `json` / `cyclonedx` / `spdx` write it to stderr so payloads stay parseable. The CRA-Shield `--sync-cloud` hint is omitted when the scan was already synced.
+
+`--sync-cloud` POSTs the normalized scan JSON to `OPENCRA_API_URL` (default `https://api.cra-shield.com/v1/ingest`) with `OPENCRA_API_KEY`. A host-only value such as `http://127.0.0.1:8000` still receives `/v1/ingest` appended. Without a key, the CLI prints a signup URL and leaves the local scan intact.
+
+The public CLI does not depend on the CRA-Shield codebase. The private `opencra-cloud` repo consumes [`packages/shared`](../packages/shared) as:
+
+```toml
+opencra-shared = { git = "https://github.com/crwncode/opencra.git", subdirectory = "packages/shared" }
+```

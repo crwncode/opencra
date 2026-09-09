@@ -1,0 +1,15 @@
+# Drop-in CRA check. Copy into .github/workflows/opencra.yml
+name: OpenCRA
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  opencra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crwncode/opencra@v1
+        with:
+          fail-on-cve: true

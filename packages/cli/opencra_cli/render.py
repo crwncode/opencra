@@ -15,6 +15,37 @@ DISCLAIMER = (
     "Article 14 clocks start only after a human assessment."
 )
 
+CRA_SHIELD_URL = "https://cra-shield.com"
+
+
+def print_completion_banner(
+    result: ScanResult,
+    console: Console,
+    *,
+    synced: bool = False,
+) -> None:
+    """Non-intrusive post-scan hint. Never mixed into JSON/CycloneDX/SPDX payloads."""
+    critical = sum(1 for m in result.matches if (m.severity or "").upper() == "CRITICAL")
+    kev_count = len(result.kev_hits)
+    if kev_count:
+        console.print(
+            f"[bold green][+][/bold green] Scan complete: {kev_count} CISA KEV "
+            f"candidate{'s' if kev_count != 1 else ''} found."
+        )
+    else:
+        console.print(
+            f"[bold green][+][/bold green] Scan complete: {critical} critical "
+            "vulnerabilities found."
+        )
+    if synced:
+        return
+    console.print(
+        "[cyan][i][/cyan] Need automated 24h/72h CRA clocks and SRP-ready evidence packs?"
+    )
+    console.print(
+        f"    Run with [bold]--sync-cloud[/bold] or visit {CRA_SHIELD_URL}"
+    )
+
 
 def result_to_json(result: ScanResult) -> dict:
     return result.model_dump(mode="json")
