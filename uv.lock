@@ -989,7 +989,7 @@ wheels = [
 
 [[package]]
 name = "opencra"
-version = "0.1.5"
+version = "0.1.6"
 source = { editable = "." }
 dependencies = [
     { name = "opencra-cli" },
@@ -1062,7 +1062,7 @@ provides-extras = ["postgres", "pdf"]
 
 [[package]]
 name = "opencra-cli"
-version = "0.1.5"
+version = "0.1.6"
 source = { editable = "packages/cli" }
 dependencies = [
     { name = "httpx" },
@@ -1090,7 +1090,7 @@ provides-extras = ["pdf"]
 
 [[package]]
 name = "opencra-shared"
-version = "0.1.5"
+version = "0.1.6"
 source = { editable = "packages/shared" }
 dependencies = [
     { name = "packageurl-python" },
