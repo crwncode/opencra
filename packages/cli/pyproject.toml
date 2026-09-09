@@ -1,11 +1,11 @@
 [project]
 name = "opencra-cli"
-version = "0.1.5"
+version = "0.1.6"
 description = "OpenCRA command-line scanner — Syft wrapper, OSV + CISA KEV matching."
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 dependencies = [
-  "opencra-shared>=0.1.5",
+  "opencra-shared>=0.1.6",
   "typer>=0.15",
   "rich>=13.9",
   "httpx>=0.27",
