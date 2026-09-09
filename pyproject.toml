@@ -18,8 +18,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/CodeLancasterX/opencra"
-Issues = "https://github.com/CodeLancasterX/opencra/issues"
+Homepage = "https://github.com/crwncode/opencra"
+Issues = "https://github.com/crwncode/opencra/issues"
 
 [project.scripts]
 opencra = "opencra_cli.app:app"
