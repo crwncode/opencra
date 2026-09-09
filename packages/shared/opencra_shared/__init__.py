@@ -29,7 +29,7 @@ from opencra_shared.sbom import (
     serialize_cyclonedx,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.4"
 
 __all__ = [
     "CaseStatus",
