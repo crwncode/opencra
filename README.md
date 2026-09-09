@@ -36,7 +36,7 @@ Local scans are free. No account required. When your compliance team asks for th
 
 ## Install
 
-Requires [Anchore Syft](https://github.com/anchore/syft) on `PATH` for directory and image scans. CycloneDX JSON files do not need Syft.
+Syft is auto-installed to `~/.opencra/bin` on first online directory scan, or `brew install syft`. CycloneDX JSON files do not need Syft.
 
 ```bash
 # uv — no install
@@ -94,9 +94,9 @@ See [packages/action/README.md](packages/action/README.md) for every input.
 ## CLI
 
 ```bash
-# Requires Anchore Syft on PATH
-brew install syft pipx     # macOS — no brew formula for opencra yet
-# Linux Syft: https://github.com/anchore/syft#installation
+# Syft is auto-installed to ~/.opencra/bin on first online directory scan, or:
+brew install syft          # macOS
+# Linux: https://github.com/anchore/syft#installation
 
 pipx install opencra
 # or run without installing:

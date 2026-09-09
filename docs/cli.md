@@ -13,11 +13,14 @@ opencra scan [TARGET]
   --quiet / --verbose
 
 opencra doctor
+opencra doctor --install-syft
 opencra kev refresh
 opencra report --last --export-pdf PATH
 ```
 
 `TARGET` may be a Syft scan target (directory, image, …) or an existing CycloneDX JSON file. Files with `"bomFormat": "CycloneDX"` are parsed directly and do not require Syft.
+
+Directory and image scans need [Anchore Syft](https://github.com/anchore/syft). Resolution order: `--syft-bin` → `PATH` → managed `~/.opencra/bin/syft`. If Syft is missing and the scan is not `--offline`, OpenCRA downloads the official GitHub release once to `~/.opencra/bin` (HTTPS, User-Agent `opencra/<ver>`, 10s API timeout, 60s binary timeout, SHA-256 checksum). `--offline` never downloads; install via `brew install syft` or `opencra doctor --install-syft` while online.
 
 ## Exit codes
 
@@ -29,7 +32,7 @@ opencra report --last --export-pdf PATH
 
 ## Cache
 
-SQLite at `~/.opencra/cache.db` (override with `OPENCRA_CACHE`) using WAL mode. OSV results expire after 12 hours. KEV refreshes daily.
+State directory `~/.opencra` (override with `OPENCRA_HOME`). SQLite cache at `~/.opencra/cache.db` (override with `OPENCRA_CACHE`) using WAL mode. Managed Syft is `~/.opencra/bin/syft`. OSV results expire after 12 hours. KEV refreshes daily.
 
 ## PDF
 
