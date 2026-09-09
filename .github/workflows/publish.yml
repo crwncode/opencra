@@ -24,8 +24,8 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/opencra-cli
+          skip-existing: true
       - name: Publish opencra-shared
-        continue-on-error: true
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/opencra-shared
