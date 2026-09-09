@@ -7,7 +7,7 @@ Copy, paste, post. Do not over-claim: a KEV hit is a **candidate**, not legal aw
 `gh` is not authenticated in this workspace. Do these once in the browser:
 
 1. **Description:** `Open-source EU Cyber Resilience Act CLI — SBOM + CISA KEV in one command`
-2. **Website:** `https://cra-shield.com`
+2. **Website:** `https://github.com/crwncode/opencra` (do not set a commercial domain until you own one)
 3. **Topics:** `cra`, `cyber-resilience-act`, `sbom`, `cyclonedx`, `cisa-kev`, `osv`, `devsecops`, `github-action`, `python`, `compliance`
 4. **Social preview:** repo Settings → General → Social preview → upload `docs/assets/opencra-scan.svg` (or a PNG export of it)
 5. **GitHub Marketplace:** repo → Action → *Draft a new release* is already tagged `v1`. Open [Publish your Action to the Marketplace](https://docs.github.com/en/actions/sharing-automations/publishing-actions-in-github-marketplace) and list **OpenCRA** from root `action.yml`. Primary usage string:
@@ -21,7 +21,7 @@ Copy, paste, post. Do not over-claim: a KEV hit is a **candidate**, not legal aw
    A separate `crwncode/opencra-action` alias repo is optional later. `crwncode/opencra@v1` already works and is what Marketplace expects when the action lives in this repo.
 
 6. **Discussions:** enable GitHub Discussions (Q&A + Show and tell).
-7. **Push `main`:** this branch is one commit ahead (`Move CRA-Shield out of the public OpenCRA repo.`). Push before you post, then tag a release if you want PyPI `0.1.5` with the new banner.
+7. **Push `main`:** keep `main` current before you post. Tag a release only after the PyPI version you want is on `main`.
 
 ---
 
@@ -51,8 +51,8 @@ GitHub Action (3 lines):
       with:
         fail-on-cve: true
 
-Free locally. Optional --sync-cloud posts to CRA-Shield if you want the hosted
-24h/72h dashboard.
+Free locally. Optional --sync-cloud posts to an ingest URL you configure
+(OPENCRA_API_URL + OPENCRA_API_KEY). There is no default commercial host.
 
 https://github.com/crwncode/opencra
 ```

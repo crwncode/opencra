@@ -10,7 +10,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen">
       <header className="border-b border-slate-800 px-6 py-4 flex items-center justify-between">
         <Link to="/" className="font-semibold tracking-tight">
-          CRA-Shield
+          OpenCRA
         </Link>
         <nav className="flex gap-4 text-sm text-slate-300">
           <Link to="/">Clock board</Link>
@@ -31,14 +31,14 @@ function Login() {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    localStorage.setItem("crashield_dev_user", email || "user-1");
-    localStorage.setItem("crashield_dev_org", org);
+    localStorage.setItem("opencra_dev_user", email || "user-1");
+    localStorage.setItem("opencra_dev_org", org);
     navigate("/");
   }
 
   return (
     <div className="mx-auto max-w-md py-24">
-      <h1 className="text-2xl font-semibold">Sign in to CRA-Shield</h1>
+      <h1 className="text-2xl font-semibold">Sign in</h1>
       <p className="mt-2 text-sm text-slate-400">
         Production uses Supabase Auth (email or GitHub). Locally, these fields mint a
         development principal.

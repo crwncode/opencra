@@ -65,7 +65,7 @@ class IngestBody(BaseModel):
 
 @router.get("/health")
 def health() -> dict:
-    return {"ok": True, "service": "crashield"}
+    return {"ok": True, "service": "opencra"}
 
 
 @router.get("/me")
@@ -480,7 +480,7 @@ def sso_status(
         "provider": "supabase_saml_oidc",
         "instructions": (
             "Configure SAML/OIDC on the Supabase project and set organizations.sso_enabled. "
-            "CRA-Shield does not store IdP secrets in this API."
+            "This API does not store IdP secrets."
         ),
     }
 

@@ -1,4 +1,4 @@
-"""Optional CRA-Shield cloud ingest. Never required for local scans."""
+"""Optional cloud ingest. Never required for local scans. No default host."""
 
 from __future__ import annotations
 
@@ -10,9 +10,6 @@ from opencra_shared.models import ScanResult
 
 from opencra_cli.httputil import client
 
-DEFAULT_API = "https://api.crashield.dev"
-SIGNUP_URL = "https://crashield.dev/signup"
-
 
 def ingest(
     result: ScanResult,
@@ -21,16 +18,16 @@ def ingest(
     api_key: str | None = None,
 ) -> dict[str, Any]:
     key = api_key or os.environ.get("OPENCRA_API_KEY")
-    base = (api_url or os.environ.get("OPENCRA_API_URL") or DEFAULT_API).rstrip("/")
-    if not key:
+    raw_base = api_url if api_url is not None else os.environ.get("OPENCRA_API_URL")
+    base = (raw_base or "").rstrip("/")
+    if not key or not base:
         return {
             "ok": False,
             "skipped": True,
             "message": (
-                "No OPENCRA_API_KEY set. Local scan is complete. "
-                f"Create a CRA-Shield workspace at {SIGNUP_URL}"
+                "Cloud sync skipped. Set OPENCRA_API_URL and OPENCRA_API_KEY to POST "
+                "results to your own ingest endpoint. Local scan is complete."
             ),
-            "signup_url": SIGNUP_URL,
         }
     payload = result.model_dump(mode="json")
     try:
@@ -43,4 +40,4 @@ def ingest(
             response.raise_for_status()
             return {"ok": True, "response": response.json()}
     except httpx.HTTPError as exc:
-        return {"ok": False, "message": f"CRA-Shield ingest failed: {exc}"}
+        return {"ok": False, "message": f"Cloud ingest failed: {exc}"}

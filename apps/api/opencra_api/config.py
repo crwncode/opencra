@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     supabase_url: str = "http://127.0.0.1:54321"
     supabase_jwt_secret: str = "dev-secret-change-me"
     supabase_anon_key: str = ""
-    database_url: str = "sqlite+pysqlite:///./crashield.db"
+    database_url: str = "sqlite+pysqlite:///./opencra.db"
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     stripe_price_pro: str = ""

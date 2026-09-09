@@ -18,9 +18,9 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="CRA-Shield",
+    title="OpenCRA API",
     version="0.1.0",
-    description="Hosted CRA Article 14 control plane. Does not file with ENISA.",
+    description="Optional CRA Article 14 control plane. Does not file with ENISA.",
     lifespan=lifespan,
 )
 app.add_middleware(

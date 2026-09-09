@@ -31,7 +31,7 @@ class PortalOnlyAdapter:
             submitted=False,
             message=(
                 "ENISA SRP has no public API. Copy the packet fields into the portal, "
-                f"then mark this {packet.stage} as submitted in CRA-Shield."
+                f"then mark this {packet.stage} as submitted in the control plane."
             ),
         )
 

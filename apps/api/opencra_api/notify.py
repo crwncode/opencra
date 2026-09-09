@@ -8,7 +8,7 @@ import httpx
 
 from opencra_api.config import settings
 
-logger = logging.getLogger("crashield.notify")
+logger = logging.getLogger("opencra.notify")
 
 
 def notify_deadline(text: str) -> None:

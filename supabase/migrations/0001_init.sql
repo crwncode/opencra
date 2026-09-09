@@ -1,4 +1,4 @@
--- CRA-Shield multi-tenant schema. RLS is the tenant boundary.
+-- Multi-tenant schema. RLS is the tenant boundary.
 create extension if not exists "pgcrypto";
 
 create table if not exists organizations (

@@ -233,7 +233,7 @@ Thumbs.db
 # SQLite / Local Databases
 *.db
 *.sqlite3
-crashield.db
+opencra.db
 
 # OpenCRA CLI output test files
 *.cyclonedx.json

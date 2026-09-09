@@ -1,7 +1,7 @@
 [project]
 name = "opencra-api"
 version = "0.1.0"
-description = "CRA-Shield FastAPI control plane."
+description = "Optional local FastAPI control plane."
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }
 dependencies = [
@@ -23,7 +23,7 @@ postgres = ["psycopg[binary]>=3.2"]
 pdf = ["weasyprint>=63.0"]
 
 [project.scripts]
-crashield-api = "opencra_api.main:run"
+opencra-api = "opencra_api.main:run"
 
 [build-system]
 requires = ["hatchling"]
