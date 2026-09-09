@@ -43,14 +43,42 @@ def resolve_syft(syft_bin: str | None = None) -> str:
     return found
 
 
-def parse_syft_version(text: str) -> tuple[int, int, int] | None:
-    # Typical: "syft 1.18.1"
+def _parse_version_token(text: str) -> tuple[int, int, int] | None:
     for token in text.replace(",", " ").split():
-        parts = token.strip().split(".")
+        token = token.strip().lstrip("vV")
+        parts = token.split(".")
         if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
             patch = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 0
             return int(parts[0]), int(parts[1]), patch
     return None
+
+
+def parse_syft_version(text: str) -> tuple[int, int, int] | None:
+    """Parse a Syft version from `syft version` or `syft --version` text.
+
+    Prefer the ``Version:`` line so SchemaVersion (e.g. 16.1.10) is not used.
+    """
+    for line in text.splitlines():
+        if line.strip().lower().startswith("version:"):
+            parsed = _parse_version_token(line.split(":", 1)[1])
+            if parsed:
+                return parsed
+    return _parse_version_token(text)
+
+
+def format_syft_label(output: str, parsed: tuple[int, int, int] | None, fallback: str = "syft") -> str:
+    """Human-readable Syft version for `opencra doctor` (not the first metadata line)."""
+    if parsed:
+        return f"syft {parsed[0]}.{parsed[1]}.{parsed[2]}"
+    for line in output.splitlines():
+        if line.strip().lower().startswith("version:"):
+            value = line.split(":", 1)[1].strip()
+            if value:
+                return f"syft {value.lstrip('vV')}"
+    stripped = output.strip()
+    if stripped:
+        return stripped.splitlines()[0]
+    return fallback
 
 
 def syft_version(syft_bin: str | None = None) -> tuple[str, tuple[int, int, int] | None]:
@@ -72,7 +100,7 @@ def syft_version(syft_bin: str | None = None) -> tuple[str, tuple[int, int, int]
         )
         output = (result.stdout or "") + (result.stderr or "")
     parsed = parse_syft_version(output)
-    return output.strip().splitlines()[0] if output.strip() else binary, parsed
+    return format_syft_label(output, parsed, fallback=binary), parsed
 
 
 def version_ok(version: tuple[int, int, int] | None) -> bool:

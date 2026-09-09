@@ -17,3 +17,36 @@ jobs:
         run: uv sync --all-packages
       - name: Scan this repository
         run: uv run opencra scan . --fail-on none --format table
+      - name: CycloneDX export
+        run: uv run opencra scan . --fail-on none --format cyclonedx --output sbom.cdx.json
+      - name: PDF fallback
+        run: uv run opencra scan examples/sample.cdx.json --fail-on none --export-pdf cra-report.pdf
+      - name: KEV fail-on sample (exit 1)
+        run: |
+          set +e
+          uv run opencra scan examples/sample-kev.cdx.json --fail-on kev --format table
+          code=$?
+          set -e
+          if [ "$code" -ne 1 ]; then
+            echo "expected exit 1 on KEV threshold, got $code"
+            exit 1
+          fi
+      - name: Native PDF (WeasyPrint)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libcairo2 libpango-1.0-0 libpangocairo-1.0-0 \
+            libgdk-pixbuf-2.0-0 libffi-dev shared-mime-info
+          uv pip install weasyprint
+          uv run opencra scan examples/sample.cdx.json --fail-on none --export-pdf cra-native.pdf
+          test -f cra-native.pdf
+          python3 -c "assert open('cra-native.pdf','rb').read(4)==b'%PDF'"
+
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crwncode/opencra@v1
+        with:
+          fail-on: none
+          export-pdf: cra-report.pdf

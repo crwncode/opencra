@@ -19,6 +19,8 @@ opencra report --last --export-pdf PATH
 
 `TARGET` may be a Syft scan target (directory, image, …) or an existing CycloneDX JSON file. Files with `"bomFormat": "CycloneDX"` are parsed directly and do not require Syft.
 
+`examples/sample.cdx.json` is a clean-ish SBOM (`requests`). `examples/sample-kev.cdx.json` is Log4j 2.14.1 so `--fail-on kev` exits 1. A KEV hit is a **candidate**, never awareness.
+
 ## Exit codes
 
 | Code | Meaning |
@@ -33,7 +35,7 @@ SQLite at `~/.opencra/cache.db` (override with `OPENCRA_CACHE`) using WAL mode. 
 
 ## PDF
 
-`--export-pdf` uses WeasyPrint when Cairo and Pango are installed. Otherwise OpenCRA writes HTML and Markdown and explains how to install native libraries. The GitHub Action image includes those libraries.
+`--export-pdf` uses WeasyPrint when the `opencra-cli[pdf]` extra and Cairo/Pango are installed (`pip install 'opencra-cli[pdf]'`). Otherwise OpenCRA writes HTML and Markdown and explains how to install native libraries. The GitHub Action Docker image in `packages/action/` includes those libraries; the composite Action falls back to HTML.
 
 ## Cloud sync
 

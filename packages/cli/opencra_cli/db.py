@@ -51,6 +51,11 @@ class Cache:
                 fetched_at TEXT NOT NULL,
                 vulns_json TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS osv_vulns (
+                vuln_id TEXT PRIMARY KEY,
+                fetched_at TEXT NOT NULL,
+                vuln_json TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS scans (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 target TEXT NOT NULL,
@@ -118,6 +123,32 @@ class Cache:
         if datetime.now(timezone.utc) - fetched > OSV_TTL:
             return None
         return json.loads(row["vulns_json"])
+
+    def get_osv_vuln(self, vuln_id: str) -> dict[str, Any] | None:
+        row = self.conn.execute(
+            "SELECT fetched_at, vuln_json FROM osv_vulns WHERE vuln_id = ?",
+            (vuln_id,),
+        ).fetchone()
+        if not row:
+            return None
+        fetched = datetime.fromisoformat(row["fetched_at"])
+        if datetime.now(timezone.utc) - fetched > OSV_TTL:
+            return None
+        payload = json.loads(row["vuln_json"])
+        return payload if isinstance(payload, dict) else None
+
+    def save_osv_vuln(self, vuln_id: str, vuln: dict[str, Any]) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        self.conn.execute(
+            """
+            INSERT INTO osv_vulns (vuln_id, fetched_at, vuln_json)
+            VALUES (?, ?, ?)
+            ON CONFLICT(vuln_id) DO UPDATE SET fetched_at = excluded.fetched_at,
+                                               vuln_json = excluded.vuln_json
+            """,
+            (vuln_id, now, json.dumps(vuln)),
+        )
+        self.conn.commit()
 
     def save_osv(self, purl: str, vulns: list[dict[str, Any]]) -> None:
         now = datetime.now(timezone.utc).isoformat()
