@@ -13,6 +13,11 @@ from rich.console import Console
 
 from opencra_cli import __version__
 from opencra_cli.db import Cache, default_db_path
+from opencra_cli.guide import (
+    USAGE_EPILOG,
+    maybe_print_first_run,
+    print_post_syft_install_tip,
+)
 from opencra_cli.kev import KevError, load_index, refresh
 from opencra_cli.match import merge_matches
 from opencra_cli.nvd import cvss_from_nvd, enrich_cve
@@ -42,6 +47,7 @@ from opencra_cli.sync import ingest
 app = typer.Typer(
     name="opencra",
     help="CRA Article 14 reporting readiness for your SBOM. A KEV hit is a candidate, not awareness.",
+    epilog=USAGE_EPILOG,
     no_args_is_help=True,
 )
 console = Console()
@@ -89,6 +95,14 @@ def _announce_syft_install(dest_dir: Path) -> None:
     )
 
 
+def _announce_syft_ready(path: Path) -> None:
+    print_post_syft_install_tip(err_console, path)
+
+
+def _note_first_run(*, quiet: bool = False) -> None:
+    maybe_print_first_run(err_console, quiet=quiet)
+
+
 def _run_scan(
     target: str,
     *,
@@ -103,6 +117,8 @@ def _run_scan(
         syft_bin=syft_bin,
         offline=offline,
         on_install=None if quiet else _announce_syft_install,
+        on_installed=None if quiet else _announce_syft_ready,
+        show_progress=not quiet,
     )
     skipped = [c for c in document.components if not c.purl]
     valid_purls = sorted({c.purl for c in document.components if c.purl})
@@ -157,6 +173,7 @@ def scan(
 ) -> None:
     """Generate or ingest an SBOM and match components against OSV + CISA KEV."""
     _configure_logging(verbose, quiet)
+    _note_first_run(quiet=quiet)
     try:
         with Cache() as cache:
             result = _run_scan(
@@ -238,14 +255,18 @@ def doctor(
     ),
 ) -> None:
     """Check Syft, network, cache, and PDF engine. Friendly, not a stack trace."""
+    _note_first_run()
     console.print(f"[bold]OpenCRA[/bold] {__version__}")
     if install_syft:
         dest = managed_syft_path()
+        existed = dest.is_file()
         try:
-            if not dest.is_file():
+            if not existed:
                 _announce_syft_install(dest.parent)
             path = install_managed_syft()
             console.print(f"Syft install: [green]ok[/green] {path}")
+            if not existed:
+                print_post_syft_install_tip(console, Path(path))
         except SyftError as exc:
             console.print(f"Syft install: [red]failed[/red]\n{exc}")
     try:
@@ -291,6 +312,7 @@ def kev_cmd(
     action: str = typer.Argument("refresh", help="Only 'refresh' is supported."),
 ) -> None:
     """Download or refresh the CISA KEV catalog into the local cache."""
+    _note_first_run()
     if action != "refresh":
         _exit(2, "Usage: opencra kev refresh")
     try:
@@ -308,6 +330,7 @@ def report(
     format: FormatOpt = typer.Option(FormatOpt.table, "--format"),
 ) -> None:
     """Show the last cached scan without invoking Syft."""
+    _note_first_run()
     if not last:
         _exit(2, "Pass --last to print the most recent scan.")
     with Cache() as cache:

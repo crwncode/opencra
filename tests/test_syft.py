@@ -15,6 +15,7 @@ from opencra_cli.paths import opencra_home
 from opencra_cli.syft import (
     INSTALL_HINT,
     SyftError,
+    download_url_bytes,
     ensure_syft,
     find_syft,
     format_syft_label,
@@ -24,6 +25,7 @@ from opencra_cli.syft import (
     parse_checksums,
     parse_syft_version,
     resolve_syft,
+    response_total_bytes,
     scan_to_document,
     syft_archive_name,
     syft_platform,
@@ -75,12 +77,25 @@ def _make_syft_archive(payload: bytes = b"#!/bin/sh\necho syft\n") -> bytes:
     return buf.getvalue()
 
 
+def _archive_response(blob: bytes, *, content_length: bool) -> httpx.Response:
+    if content_length:
+        return httpx.Response(200, content=blob, headers={"Content-Length": str(len(blob))})
+
+    def chunks() -> object:
+        step = max(1, len(blob) // 4)
+        for start in range(0, len(blob), step):
+            yield blob[start : start + step]
+
+    return httpx.Response(200, content=chunks())
+
+
 def _mock_syft_download(
     monkeypatch: pytest.MonkeyPatch,
     *,
     archive: bytes | None = None,
     checksum: str | None = None,
     tag: str = "v1.18.1",
+    content_length: bool = True,
 ) -> list[str]:
     blob = archive if archive is not None else _make_syft_archive()
     os_name, arch = syft_platform()
@@ -114,13 +129,21 @@ def _mock_syft_download(
         if url.endswith(checksum_name):
             return httpx.Response(200, text=checksums)
         if url.endswith(archive_name):
-            return httpx.Response(200, content=blob)
+            return _archive_response(blob, content_length=content_length)
         return httpx.Response(404, text="unexpected url")
 
     transport = httpx.MockTransport(handler)
 
     def factory(**kwargs: object) -> httpx.Client:
-        return client(transport=transport, **kwargs)
+        http = client(transport=transport, **kwargs)
+        original_stream = http.stream
+
+        def stream(method: str, url: str, **stream_kwargs: object) -> object:
+            urls.append(f"STREAM {method} {url}")
+            return original_stream(method, url, **stream_kwargs)
+
+        http.stream = stream  # type: ignore[method-assign]
+        return http
 
     monkeypatch.setattr("opencra_cli.syft.client", factory)
     return urls
@@ -242,7 +265,7 @@ def test_offline_ensure_refuses_download(tmp_path: Path, monkeypatch: pytest.Mon
     def boom_client(**kwargs: object) -> httpx.Client:
         raise AssertionError("offline must not open an HTTP client")
 
-    def boom_install(*, force: bool = False) -> str:
+    def boom_install(*, force: bool = False, show_progress: bool = True) -> str:
         raise AssertionError("offline must not download")
 
     monkeypatch.setattr("opencra_cli.syft.client", boom_client)
@@ -259,6 +282,29 @@ def test_offline_ensure_includes_brew_hint(tmp_path: Path, monkeypatch: pytest.M
     assert "install.sh" in str(exc.value)
 
 
+class _RecordingProgress:
+    """Stand-in for rich.progress.Progress so tests can assert totals and advances."""
+
+    def __init__(self, *columns: object, **kwargs: object) -> None:
+        self.columns = columns
+        self.kwargs = kwargs
+        self.tasks: list[tuple[str, int | None]] = []
+        self.advances: list[int] = []
+
+    def __enter__(self) -> _RecordingProgress:
+        return self
+
+    def __exit__(self, *args: object) -> bool:
+        return False
+
+    def add_task(self, description: str, total: int | None = None) -> int:
+        self.tasks.append((description, total))
+        return 0
+
+    def update(self, task_id: int, advance: int = 0, **kwargs: object) -> None:
+        self.advances.append(advance)
+
+
 def test_install_managed_syft_mocked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _isolate_syft(monkeypatch, tmp_path / "home")
     payload = b"#!/bin/sh\necho installed\n"
@@ -272,6 +318,91 @@ def test_install_managed_syft_mocked(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert dest.stat().st_mode & 0o111
     assert any("releases/latest" in url for url in urls)
     assert any("checksums.txt" in url for url in urls)
+    assert any(url.startswith("STREAM GET ") for url in urls)
+
+
+def test_download_url_bytes_progress_with_content_length(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    blob = b"syft-archive" * 800
+    recorded: list[_RecordingProgress] = []
+
+    def factory(*columns: object, **kwargs: object) -> _RecordingProgress:
+        progress = _RecordingProgress(*columns, **kwargs)
+        recorded.append(progress)
+        return progress
+
+    monkeypatch.setattr("opencra_cli.syft.Progress", factory)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers.get("user-agent") == USER_AGENT
+        return httpx.Response(200, content=blob, headers={"Content-Length": str(len(blob))})
+
+    transport = httpx.MockTransport(handler)
+    with client(transport=transport) as http:
+        data = download_url_bytes(
+            http,
+            "https://github.com/anchore/syft/releases/download/v1.18.1/syft.tar.gz",
+            chunk_size=64,
+        )
+    assert data == blob
+    assert recorded
+    assert recorded[0].tasks == [("Downloading Syft", len(blob))]
+    assert sum(recorded[0].advances) == len(blob)
+    assert recorded[0].advances
+    sample = httpx.Response(200, content=b"x", headers={"Content-Length": "12"})
+    assert response_total_bytes(sample) == 12
+
+
+def test_download_url_bytes_spinner_without_content_length(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    blob = b"no-length" * 300
+    recorded: list[_RecordingProgress] = []
+
+    def factory(*columns: object, **kwargs: object) -> _RecordingProgress:
+        progress = _RecordingProgress(*columns, **kwargs)
+        recorded.append(progress)
+        return progress
+
+    monkeypatch.setattr("opencra_cli.syft.Progress", factory)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers.get("user-agent") == USER_AGENT
+        return _archive_response(blob, content_length=False)
+
+    transport = httpx.MockTransport(handler)
+    with client(transport=transport) as http:
+        data = download_url_bytes(http, "https://example.com/syft.tar.gz", chunk_size=32)
+    assert data == blob
+    assert recorded
+    assert recorded[0].tasks == [("Downloading Syft", None)]
+    assert sum(recorded[0].advances) == len(blob)
+    empty_len = httpx.Response(200, content=b"x", headers={"Content-Length": ""})
+    assert response_total_bytes(empty_len) is None
+
+
+def test_install_managed_syft_progress_streams_without_content_length(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _isolate_syft(monkeypatch, tmp_path / "home")
+    recorded: list[_RecordingProgress] = []
+
+    def factory(*columns: object, **kwargs: object) -> _RecordingProgress:
+        progress = _RecordingProgress(*columns, **kwargs)
+        recorded.append(progress)
+        return progress
+
+    monkeypatch.setattr("opencra_cli.syft.Progress", factory)
+    archive = _make_syft_archive(b"#!/bin/sh\necho streamed\n")
+    urls = _mock_syft_download(monkeypatch, archive=archive, content_length=False)
+    path = install_managed_syft()
+    assert path == str(managed_syft_path())
+    assert managed_syft_path().read_bytes() == b"#!/bin/sh\necho streamed\n"
+    assert any(url.startswith("STREAM GET ") for url in urls)
+    assert recorded
+    assert recorded[0].tasks[0][1] is None
+    assert sum(recorded[0].advances) == len(archive)
 
 
 def test_install_managed_syft_rejects_bad_checksum(
@@ -343,7 +474,7 @@ def test_scan_dir_bootstraps_syft_when_online(
     proj = tmp_path / "proj"
     proj.mkdir()
 
-    def fake_install(*, force: bool = False) -> str:
+    def fake_install(*, force: bool = False, show_progress: bool = True) -> str:
         return str(_touch_executable(managed_syft_path(), FAKE_SYFT_SCRIPT))
 
     monkeypatch.setattr("opencra_cli.syft.install_managed_syft", fake_install)
@@ -375,7 +506,7 @@ def test_scan_dir_announces_bootstrap(tmp_path: Path, monkeypatch: pytest.Monkey
     proj = tmp_path / "proj"
     proj.mkdir()
 
-    def fake_install(*, force: bool = False) -> str:
+    def fake_install(*, force: bool = False, show_progress: bool = True) -> str:
         return str(_touch_executable(managed_syft_path(), FAKE_SYFT_SCRIPT))
 
     monkeypatch.setattr("opencra_cli.syft.install_managed_syft", fake_install)
@@ -441,6 +572,8 @@ def test_doctor_install_syft_uses_mocked_download(
     assert "Syft install: ok" in combined or "Syft install:" in combined
     assert managed_syft_path().is_file()
     assert "Downloading the official Anchore release" in combined
+    assert "Syft installed" in combined
+    assert "opencra kev refresh" in combined
 
 
 def test_download_timeout_is_sixty_seconds() -> None:
