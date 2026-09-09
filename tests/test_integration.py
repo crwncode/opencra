@@ -16,7 +16,7 @@ import pytest
 from opencra_cli import __version__
 from opencra_cli.app import FailOnOpt, app
 from opencra_cli.db import Cache
-from opencra_cli.httputil import HTTP_TIMEOUT, USER_AGENT, client
+from opencra_cli.httputil import DOWNLOAD_TIMEOUT, HTTP_TIMEOUT, USER_AGENT, client
 from opencra_cli.kev import (
     KEV_FALLBACK_URL,
     KEV_URL,
@@ -68,8 +68,12 @@ def _assert_opencra_request(request: httpx.Request) -> None:
 def test_http_client_uses_versioned_ua_and_10s_timeout() -> None:
     assert USER_AGENT == f"opencra/{__version__}"
     assert HTTP_TIMEOUT == 10.0
+    assert DOWNLOAD_TIMEOUT == 60.0
     with client() as http:
         assert http.timeout.read == 10.0
+        assert http.headers["User-Agent"] == USER_AGENT
+    with client(timeout=DOWNLOAD_TIMEOUT) as http:
+        assert http.timeout.read == 60.0
         assert http.headers["User-Agent"] == USER_AGENT
 
 

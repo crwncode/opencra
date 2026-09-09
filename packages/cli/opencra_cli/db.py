@@ -9,6 +9,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from opencra_cli.paths import opencra_home
+
 OSV_TTL = timedelta(hours=12)
 
 
@@ -16,7 +18,7 @@ def default_db_path() -> Path:
     override = os.environ.get("OPENCRA_CACHE")
     if override:
         return Path(override).expanduser()
-    return Path.home() / ".opencra" / "cache.db"
+    return opencra_home() / "cache.db"
 
 
 class Cache:

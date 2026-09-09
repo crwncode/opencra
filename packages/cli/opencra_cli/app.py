@@ -26,7 +26,17 @@ from opencra_cli.render import (
     result_to_json,
     write_output,
 )
-from opencra_cli.syft import SyftError, resolve_syft, scan_to_document, syft_version, version_ok
+from opencra_cli.syft import (
+    INSTALL_HINT,
+    SyftError,
+    find_syft,
+    install_managed_syft,
+    managed_syft_path,
+    scan_to_document,
+    syft_version,
+    version_ok,
+    which_syft,
+)
 from opencra_cli.sync import ingest
 
 app = typer.Typer(
@@ -72,6 +82,13 @@ def _exit(code: int, message: str | None = None) -> None:
     raise typer.Exit(code)
 
 
+def _announce_syft_install(dest_dir: Path) -> None:
+    err_console.print(
+        "[cyan]Syft is required to scan directories and images. "
+        f"Downloading the official Anchore release once to {dest_dir} …[/cyan]"
+    )
+
+
 def _run_scan(
     target: str,
     *,
@@ -79,8 +96,14 @@ def _run_scan(
     enrich: EnrichOpt,
     syft_bin: str | None,
     cache: Cache,
+    quiet: bool,
 ) -> ScanResult:
-    document = scan_to_document(target, syft_bin=syft_bin)
+    document = scan_to_document(
+        target,
+        syft_bin=syft_bin,
+        offline=offline,
+        on_install=None if quiet else _announce_syft_install,
+    )
     skipped = [c for c in document.components if not c.purl]
     valid_purls = sorted({c.purl for c in document.components if c.purl})
     warnings: list[str] = []
@@ -142,6 +165,7 @@ def scan(
                 enrich=enrich,
                 syft_bin=syft_bin,
                 cache=cache,
+                quiet=quiet,
             )
             cache.save_scan(target, result_to_json(result), result.sbom.model_dump(mode="json"))
     except SyftError as exc:
@@ -191,22 +215,58 @@ def scan(
         _exit(1, f"Scan failed --fail-on {threshold.value}.")
 
 
+def _print_syft_locations(*, explicit: str | None = None) -> None:
+    path_found = which_syft()
+    managed = managed_syft_path()
+    managed_ok = managed.is_file()
+    if explicit:
+        console.print(f"  --syft-bin: {explicit}")
+    console.print(f"  PATH: {path_found or 'not found'}")
+    if managed_ok:
+        console.print(f"  managed: {managed}")
+    else:
+        console.print(f"  managed: not found ({managed})")
+
+
 @app.command()
 def doctor(
     syft_bin: str | None = typer.Option(None, "--syft-bin"),
+    install_syft: bool = typer.Option(
+        False,
+        "--install-syft",
+        help="Download official Syft once to ~/.opencra/bin (or $OPENCRA_HOME/bin).",
+    ),
 ) -> None:
     """Check Syft, network, cache, and PDF engine. Friendly, not a stack trace."""
     console.print(f"[bold]OpenCRA[/bold] {__version__}")
+    if install_syft:
+        dest = managed_syft_path()
+        try:
+            if not dest.is_file():
+                _announce_syft_install(dest.parent)
+            path = install_managed_syft()
+            console.print(f"Syft install: [green]ok[/green] {path}")
+        except SyftError as exc:
+            console.print(f"Syft install: [red]failed[/red]\n{exc}")
     try:
-        path = resolve_syft(syft_bin)
-        label, parsed = syft_version(syft_bin)
+        located = find_syft(syft_bin)
+        if located is None:
+            raise SyftError(INSTALL_HINT)
+        path, source = located
+        label, parsed = syft_version(path)
         ok = version_ok(parsed)
         status = "[green]ok[/green]" if ok else "[yellow]old[/yellow]"
-        console.print(f"Syft: {status} {path} ({label})")
+        console.print(f"Syft: {status} {path} ({label}, {source})")
+        _print_syft_locations(explicit=syft_bin)
         if not ok:
             console.print("  Install Syft >= 1.0.0 for CycloneDX 1.6 output.")
     except SyftError as exc:
         console.print(f"Syft: [red]missing[/red]\n{exc}")
+        _print_syft_locations(explicit=syft_bin)
+        console.print(
+            "  [dim]Hint:[/dim] `opencra doctor --install-syft` or a first online "
+            "`opencra scan .` downloads Syft to ~/.opencra/bin."
+        )
 
     cache_path = default_db_path()
     console.print(f"Cache: {cache_path} ({'exists' if cache_path.exists() else 'will be created'})")
